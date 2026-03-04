@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Mic2, 
@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -66,7 +67,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-10">
           <h2 className="text-gray-500 font-medium">Aiyê Hub <span className="mx-2 text-gray-300">/</span> {menuItems.find(i => i.path === location.pathname)?.label || 'Detalhes'}</h2>
           <div className="flex items-center gap-4">
-            <button className="bg-[#F5E6D3] text-[#8B4513] px-4 py-2 rounded-full text-sm font-medium hover:bg-[#EBD5B8] transition-colors">
+            <button 
+              onClick={() => navigate("/episodes/new")}
+              className="bg-[#F5E6D3] text-[#8B4513] px-4 py-2 rounded-full text-sm font-medium hover:bg-[#EBD5B8] transition-colors"
+            >
               Novo Episódio
             </button>
           </div>
