@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import * as React from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,23 +7,33 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
-    // Busca a sessão inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
+  React.useEffect(() => {
+    let mounted = true;
 
-    // Escuta mudanças na autenticação
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (mounted) {
+        setSession(session);
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setLoading(false);
+      if (mounted) {
+        setSession(session);
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {
