@@ -12,6 +12,8 @@ import CalendarPage from "./pages/Calendar";
 import PostProduction from "./pages/PostProduction";
 import Episodes from "./pages/Episodes";
 import Settings from "./pages/Settings";
+import KnowledgeBase from "./pages/KnowledgeBase";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
           <Route path="/episodes/post/:id" element={<PostProduction />} />
           <Route path="/episodes" element={<Episodes />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/knowledge" element={<KnowledgeBase />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
