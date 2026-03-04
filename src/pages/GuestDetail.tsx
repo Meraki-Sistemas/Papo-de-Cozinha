@@ -1,9 +1,9 @@
+import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  User, 
   Mail, 
   Phone, 
   Globe, 
@@ -11,12 +11,70 @@ import {
   History, 
   MessageSquare,
   ArrowLeft,
-  Edit3
+  Edit3,
+  Loader2
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const GuestDetail = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const [guest, setGuest] = useState<any>(null);
+  const [episodes, setEpisodes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGuestData = async () => {
+      try {
+        // Busca dados do convidado
+        const { data: guestData, error: guestError } = await supabase
+          .from('guests')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (guestError) throw guestError;
+        setGuest(guestData);
+
+        // Busca episódios relacionados
+        const { data: episodesData } = await supabase
+          .from('episodes')
+          .select('*')
+          .eq('guest_id', id)
+          .order('created_at', { ascending: false });
+        
+        setEpisodes(episodesData || []);
+      } catch (error) {
+        console.error("Erro ao buscar dados do convidado:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGuestData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="h-full flex items-center justify-center">
+          <Loader2 className="animate-spin text-[#8B4513]" size={48} />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!guest) {
+    return (
+      <Layout>
+        <div className="text-center py-12">
+          <p className="text-gray-500">Convidado não encontrado.</p>
+          <Button variant="link" onClick={() => navigate("/guests")}>Voltar para a lista</Button>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -36,14 +94,15 @@ const GuestDetail = () => {
               <div className="h-32 bg-[#8B4513]" />
               <CardContent className="p-6 -mt-16 text-center">
                 <div className="w-32 h-32 rounded-full bg-[#F5E6D3] border-4 border-white shadow-lg mx-auto flex items-center justify-center text-[#8B4513] text-4xl font-bold mb-4">
-                  T
+                  {guest.name.charAt(0)}
                 </div>
-                <h2 className="text-2xl font-bold text-[#2D1B14]">Tiganá Santana</h2>
-                <p className="text-sm text-gray-500 mb-6">Compositor e Pesquisador</p>
+                <h2 className="text-2xl font-bold text-[#2D1B14]">{guest.name}</h2>
+                <p className="text-sm text-gray-500 mb-6">{guest.role || 'Convidado'}</p>
                 
-                <div className="flex justify-center gap-2 mb-6">
-                  <Badge className="bg-orange-50 text-orange-700 border-none">Axé</Badge>
-                  <Badge className="bg-blue-50 text-blue-700 border-none">Educação</Badge>
+                <div className="flex flex-wrap justify-center gap-2 mb-6">
+                  {guest.axes?.map((axis: string) => (
+                    <Badge key={axis} className="bg-orange-50 text-orange-700 border-none">{axis}</Badge>
+                  ))}
                 </div>
 
                 <Button className="w-full bg-[#8B4513] hover:bg-[#6F370F] gap-2">
@@ -58,13 +117,13 @@ const GuestDetail = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Mail size={16} className="text-gray-400" /> tigana@exemplo.com
+                  <Mail size={16} className="text-gray-400" /> {guest.email || 'Não informado'}
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Phone size={16} className="text-gray-400" /> (11) 99999-9999
+                  <Phone size={16} className="text-gray-400" /> {guest.phone || 'Não informado'}
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Globe size={16} className="text-gray-400" /> tiganasantana.com
+                  <Globe size={16} className="text-gray-400" /> {guest.website || 'Não informado'}
                 </div>
               </CardContent>
             </Card>
@@ -80,7 +139,7 @@ const GuestDetail = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-700 leading-relaxed italic">
-                  "Tiganá valoriza o silêncio e a escuta profunda. Prefere ser tratado por 'Professor'. Evitar perguntas sobre ritos internos de sua casa. Consultar disponibilidade sempre com 30 dias de antecedência devido às suas viagens de pesquisa."
+                  {guest.care_protocol || "Nenhum protocolo de cuidado específico registrado para este convidado."}
                 </p>
               </CardContent>
             </Card>
@@ -92,20 +151,25 @@ const GuestDetail = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 rounded-xl border border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer group">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-bold text-[#2D1B14] group-hover:text-[#8B4513]">Ep #012: Ancestralidade e Tecnologia</h4>
-                    <Badge className="bg-emerald-100 text-emerald-700 border-none">Concluído</Badge>
-                  </div>
-                  <p className="text-xs text-gray-500">Gravado em 15 Out, 2023 • 54 min de conversa</p>
-                </div>
-                <div className="p-4 rounded-xl border border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer group">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-bold text-[#2D1B14] group-hover:text-[#8B4513]">Ep #003: O Som do Silêncio</h4>
-                    <Badge className="bg-emerald-100 text-emerald-700 border-none">Concluído</Badge>
-                  </div>
-                  <p className="text-xs text-gray-500">Gravado em 10 Jan, 2023 • 42 min de conversa</p>
-                </div>
+                {episodes.length > 0 ? (
+                  episodes.map((ep) => (
+                    <div 
+                      key={ep.id} 
+                      className="p-4 rounded-xl border border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer group"
+                      onClick={() => navigate(`/episodes/${ep.id}`)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-[#2D1B14] group-hover:text-[#8B4513]">{ep.title}</h4>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-none uppercase text-[10px]">{ep.status}</Badge>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        {ep.scheduled_date ? `Agendado para ${ep.scheduled_date}` : 'Data não definida'}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-400 italic">Nenhum episódio registrado com este convidado.</p>
+                )}
               </CardContent>
             </Card>
 
@@ -117,10 +181,6 @@ const GuestDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <p className="text-xs font-bold text-gray-400 mb-1">Silvana • 14 Out</p>
-                    <p className="text-sm text-gray-600">"O convidado solicitou que o link do seu novo livro seja incluído na descrição do episódio."</p>
-                  </div>
                   <Button variant="outline" className="w-full border-dashed text-gray-400 hover:text-[#8B4513] hover:border-[#8B4513]">
                     + Adicionar Nota
                   </Button>

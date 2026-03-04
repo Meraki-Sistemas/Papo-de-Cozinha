@@ -1,33 +1,87 @@
+import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { 
   FileText, 
   Mic2, 
   Scissors, 
   Share2, 
   CheckCircle2, 
-  Clock, 
   Calendar,
   ArrowLeft,
-  MessageSquare
+  MessageSquare,
+  Loader2
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { EpisodeStatusBadge } from "@/components/EpisodeStatusBadge";
+import { EpisodeStatusBadge, EpisodeStatus } from "@/components/EpisodeStatusBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 const EpisodeDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [episode, setEpisode] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEpisode = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('episodes')
+          .select('*, guests(*)')
+          .eq('id', id)
+          .single();
+        
+        if (error) throw error;
+        setEpisode(data);
+      } catch (error) {
+        console.error("Erro ao buscar episódio:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEpisode();
+  }, [id]);
 
   const steps = [
-    { label: "Planejamento", status: "complete", icon: Calendar },
-    { label: "Roteirização", status: "current", icon: FileText },
-    { label: "Gravação", status: "pending", icon: Mic2 },
-    { label: "Edição", status: "pending", icon: Scissors },
-    { label: "Distribuição", status: "pending", icon: Share2 },
+    { label: "Planejamento", key: "planejado", icon: Calendar },
+    { label: "Roteirização", key: "roteirizacao", icon: FileText },
+    { label: "Revisão", key: "revisao", icon: MessageSquare },
+    { label: "Aprovação", key: "aprovado", icon: CheckCircle2 },
+    { label: "Gravação", key: "gravado", icon: Mic2 },
   ];
+
+  const getStepStatus = (stepKey: string) => {
+    const statusOrder = ['planejado', 'roteirizacao', 'revisao', 'aprovado', 'gravado'];
+    const currentIdx = statusOrder.indexOf(episode?.status || 'planejado');
+    const stepIdx = statusOrder.indexOf(stepKey);
+
+    if (stepIdx < currentIdx) return 'complete';
+    if (stepIdx === currentIdx) return 'current';
+    return 'pending';
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="h-full flex items-center justify-center">
+          <Loader2 className="animate-spin text-[#8B4513]" size={48} />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!episode) {
+    return (
+      <Layout>
+        <div className="text-center py-12">
+          <p className="text-gray-500">Episódio não encontrado.</p>
+          <Button variant="link" onClick={() => navigate("/episodes")}>Voltar para a lista</Button>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -43,17 +97,25 @@ const EpisodeDetail = () => {
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-[#2D1B14]">Ancestralidade e Tecnologia</h1>
-              <EpisodeStatusBadge status="revisao" />
+              <h1 className="text-3xl font-bold text-[#2D1B14]">{episode.title}</h1>
+              <EpisodeStatusBadge status={episode.status as EpisodeStatus} />
             </div>
-            <p className="text-gray-500">Episódio #012 • Convidado: <span className="font-semibold text-[#8B4513]">Tiganá Santana</span></p>
+            <p className="text-gray-500">
+              Episódio #{episode.id.slice(0, 4)} • Convidado: 
+              <span 
+                className="font-semibold text-[#8B4513] cursor-pointer hover:underline ml-1"
+                onClick={() => navigate(`/guests/${episode.guests?.id}`)}
+              >
+                {episode.guests?.name}
+              </span>
+            </p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" className="gap-2">
               <MessageSquare size={18} /> Notas da Equipe
             </Button>
             <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2">
-              <CheckCircle2 size={18} /> Aprovar Etapa
+              <CheckCircle2 size={18} /> Próxima Etapa
             </Button>
           </div>
         </div>
@@ -63,20 +125,23 @@ const EpisodeDetail = () => {
           <CardContent className="p-8">
             <div className="relative flex justify-between">
               <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-100 -translate-y-1/2 z-0" />
-              {steps.map((step, idx) => (
-                <div key={step.label} className="relative z-10 flex flex-col items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-all ${
-                    step.status === 'complete' ? 'bg-emerald-500 text-white' : 
-                    step.status === 'current' ? 'bg-[#E89D1E] text-[#2D1B14] scale-110' : 
-                    'bg-gray-100 text-gray-400'
-                  }`}>
-                    <step.icon size={20} />
+              {steps.map((step) => {
+                const status = getStepStatus(step.key);
+                return (
+                  <div key={step.label} className="relative z-10 flex flex-col items-center gap-3">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-all ${
+                      status === 'complete' ? 'bg-emerald-500 text-white' : 
+                      status === 'current' ? 'bg-[#E89D1E] text-[#2D1B14] scale-110' : 
+                      'bg-gray-100 text-gray-400'
+                    }`}>
+                      <step.icon size={20} />
+                    </div>
+                    <span className={`text-xs font-bold ${status === 'current' ? 'text-[#2D1B14]' : 'text-gray-400'}`}>
+                      {step.label}
+                    </span>
                   </div>
-                  <span className={`text-xs font-bold ${step.status === 'current' ? 'text-[#2D1B14]' : 'text-gray-400'}`}>
-                    {step.label}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -91,6 +156,10 @@ const EpisodeDetail = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="bg-[#FDF8F3] p-4 rounded-xl border border-orange-50 mb-4">
+                  <p className="text-xs font-bold text-[#8B4513] uppercase mb-1">Protocolo do Convidado</p>
+                  <p className="text-sm text-gray-600 italic">"{episode.guests?.care_protocol || 'Sem observações específicas.'}"</p>
+                </div>
                 {[
                   "Consultar calendário litúrgico do convidado",
                   "Revisar termos sensíveis na Base de Saberes",
@@ -114,7 +183,7 @@ const EpisodeDetail = () => {
                   </div>
                   <div>
                     <p className="font-bold text-[#2D1B14]">Editar Roteiro</p>
-                    <p className="text-xs text-gray-500">Última edição há 2h</p>
+                    <p className="text-xs text-gray-500">Clique para abrir o editor</p>
                   </div>
                 </CardContent>
               </Card>
@@ -125,7 +194,7 @@ const EpisodeDetail = () => {
                   </div>
                   <div>
                     <p className="font-bold text-[#2D1B14]">Ver na Agenda</p>
-                    <p className="text-xs text-gray-500">15 Out • 14:00</p>
+                    <p className="text-xs text-gray-500">{episode.scheduled_date || 'Data a definir'}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -140,28 +209,12 @@ const EpisodeDetail = () => {
               <CardContent className="space-y-4">
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10">
                   <p className="text-xs text-gray-300 leading-relaxed">
-                    "Este episódio foca na interseção entre tecnologia e ancestralidade. O roteiro atual está 85% alinhado com as diretrizes éticas de linguagem não colonial."
+                    "Este episódio foca na interseção entre tecnologia e ancestralidade. O roteiro atual está sendo processado com base nos eixos selecionados."
                   </p>
                 </div>
                 <Button variant="secondary" className="w-full bg-white/10 border-none text-white hover:bg-white/20 text-xs">
                   Gerar Briefing para Equipe
                 </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-sm font-bold">Arquivos Relacionados</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center justify-between p-2 text-xs text-gray-600 hover:bg-gray-50 rounded">
-                  <span className="flex items-center gap-2"><FileText size={14} /> Roteiro_v2.pdf</span>
-                  <Clock size={12} />
-                </div>
-                <div className="flex items-center justify-between p-2 text-xs text-gray-600 hover:bg-gray-50 rounded">
-                  <span className="flex items-center gap-2"><Mic2 size={14} /> Referencia_Audio.mp3</span>
-                  <Clock size={12} />
-                </div>
               </CardContent>
             </Card>
           </div>
