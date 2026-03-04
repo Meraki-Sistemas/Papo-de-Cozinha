@@ -19,6 +19,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Busca contagens reais
         const { count: epCount } = await supabase.from('episodes').select('*', { count: 'exact', head: true });
         const { count: guestCount } = await supabase.from('guests').select('*', { count: 'exact', head: true });
         const { count: approvedCount } = await supabase.from('episodes').select('*', { count: 'exact', head: true }).eq('status', 'aprovado');
@@ -30,6 +31,7 @@ const Dashboard = () => {
           { label: 'Horas de Gravação', value: '24h', icon: Clock, color: 'text-purple-600' },
         ]);
 
+        // Busca episódios recentes
         const { data: episodes } = await supabase
           .from('episodes')
           .select('*, guests(name)')

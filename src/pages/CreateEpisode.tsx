@@ -1,20 +1,69 @@
+import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mic2, Sparkles, Calendar as CalendarIcon } from "lucide-react";
+import { Sparkles, Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { showSuccess } from "@/utils/toast";
+import { showSuccess, showError } from "@/utils/toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const CreateEpisode = () => {
   const navigate = useNavigate();
+  const [guests, setGuests] = useState<any[]>([]);
+  const [loadingGuests, setLoadingGuests] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleCreate = () => {
-    showSuccess("Episódio criado! Redirecionando para o editor de roteiro...");
-    setTimeout(() => navigate("/scripts"), 1500);
+  // Form state
+  const [title, setTitle] = useState("");
+  const [guestId, setGuestId] = useState("");
+  const [date, setDate] = useState("");
+
+  useEffect(() => {
+    const fetchGuests = async () => {
+      const { data } = await supabase.from('guests').select('id, name').order('name');
+      setGuests(data || []);
+      setLoadingGuests(false);
+    };
+    fetchGuests();
+  }, []);
+
+  const handleCreate = async () => {
+    if (!title || !guestId) {
+      showError("Por favor, preencha o título e selecione um convidado.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('episodes')
+        .insert([
+          { 
+            title, 
+            guest_id: guestId, 
+            scheduled_date: date || null,
+            status: 'planejado',
+            created_by: user?.id
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      showSuccess("Episódio criado com sucesso!");
+      navigate(`/episodes/${data.id}`);
+    } catch (error: any) {
+      showError("Erro ao criar episódio: " + error.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -29,20 +78,26 @@ const CreateEpisode = () => {
           <CardContent className="p-8 space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Título do Episódio</Label>
-              <Input id="title" placeholder="Ex: O papel da educação popular nos terreiros" className="bg-gray-50 border-none h-12" />
+              <Input 
+                id="title" 
+                placeholder="Ex: O papel da educação popular nos terreiros" 
+                className="bg-gray-50 border-none h-12"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>Convidado</Label>
-                <Select>
+                <Select onValueChange={setGuestId} value={guestId}>
                   <SelectTrigger className="bg-gray-50 border-none h-12">
-                    <SelectValue placeholder="Selecione um convidado" />
+                    <SelectValue placeholder={loadingGuests ? "Carregando..." : "Selecione um convidado"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Tiganá Santana</SelectItem>
-                    <SelectItem value="2">Mãe Beth de Oxum</SelectItem>
-                    <SelectItem value="3">Douglas Belchior</SelectItem>
+                    {guests.map(guest => (
+                      <SelectItem key={guest.id} value={guest.id}>{guest.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -50,7 +105,12 @@ const CreateEpisode = () => {
                 <Label>Data Prevista</Label>
                 <div className="relative">
                   <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <Input type="date" className="pl-10 bg-gray-50 border-none h-12" />
+                  <Input 
+                    type="date" 
+                    className="pl-10 bg-gray-50 border-none h-12" 
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -61,7 +121,7 @@ const CreateEpisode = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex items-center space-x-3 p-4 rounded-xl border border-orange-100 bg-orange-50/30">
                   <Checkbox id="axe" />
-                  <label htmlFor="axe" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <label htmlFor="axe" className="text-sm font-medium leading-none">
                     Axé & Espiritualidade
                   </label>
                 </div>
@@ -84,8 +144,13 @@ const CreateEpisode = () => {
               <Button variant="outline" className="flex-1 h-12" onClick={() => navigate("/")}>
                 Cancelar
               </Button>
-              <Button className="flex-1 h-12 bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={handleCreate}>
-                <Sparkles size={18} /> Gerar Roteiro com IA
+              <Button 
+                className="flex-1 h-12 bg-[#8B4513] hover:bg-[#6F370F] gap-2" 
+                onClick={handleCreate}
+                disabled={submitting}
+              >
+                {submitting ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                Criar Episódio
               </Button>
             </div>
           </CardContent>
