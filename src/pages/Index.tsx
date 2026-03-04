@@ -1,23 +1,62 @@
+import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import { EpisodeStatusBadge, EpisodeStatus } from "@/components/EpisodeStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic2, Users, FileCheck, Clock } from "lucide-react";
+import { Mic2, Users, FileCheck, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const stats = [
-  { label: 'Episódios Ativos', value: '12', icon: Mic2, color: 'text-orange-600' },
-  { label: 'Convidados', value: '48', icon: Users, color: 'text-blue-600' },
-  { label: 'Roteiros Aprovados', value: '8', icon: FileCheck, color: 'text-emerald-600' },
-  { label: 'Horas de Gravação', value: '24h', icon: Clock, color: 'text-purple-600' },
-];
-
-const recentEpisodes = [
-  { id: 1, title: "Ancestralidade e Tecnologia", guest: "Prof. Dr. Tiganá Santana", date: "15 Out", status: "revisao" as EpisodeStatus },
-  { id: 2, title: "Educação de Terreiro", guest: "Mãe Beth de Oxum", date: "18 Out", status: "aprovado" as EpisodeStatus },
-  { id: 3, title: "Sociedade e Axé", guest: "Douglas Belchior", date: "22 Out", status: "roteirizacao" as EpisodeStatus },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
+  const [stats, setStats] = useState([
+    { label: 'Episódios Ativos', value: '0', icon: Mic2, color: 'text-orange-600' },
+    { label: 'Convidados', value: '0', icon: Users, color: 'text-blue-600' },
+    { label: 'Roteiros Aprovados', value: '0', icon: FileCheck, color: 'text-emerald-600' },
+    { label: 'Horas de Gravação', value: '0h', icon: Clock, color: 'text-purple-600' },
+  ]);
+  const [recentEpisodes, setRecentEpisodes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { count: epCount } = await supabase.from('episodes').select('*', { count: 'exact', head: true });
+        const { count: guestCount } = await supabase.from('guests').select('*', { count: 'exact', head: true });
+        const { count: approvedCount } = await supabase.from('episodes').select('*', { count: 'exact', head: true }).eq('status', 'aprovado');
+
+        setStats([
+          { label: 'Episódios Ativos', value: String(epCount || 0), icon: Mic2, color: 'text-orange-600' },
+          { label: 'Convidados', value: String(guestCount || 0), icon: Users, color: 'text-blue-600' },
+          { label: 'Roteiros Aprovados', value: String(approvedCount || 0), icon: FileCheck, color: 'text-emerald-600' },
+          { label: 'Horas de Gravação', value: '24h', icon: Clock, color: 'text-purple-600' },
+        ]);
+
+        const { data: episodes } = await supabase
+          .from('episodes')
+          .select('*, guests(name)')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        setRecentEpisodes(episodes || []);
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="h-full flex items-center justify-center">
+          <Loader2 className="animate-spin text-[#8B4513]" size={48} />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-8">
@@ -50,20 +89,24 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentEpisodes.map((ep) => (
-                  <div key={ep.id} className="flex items-center justify-between p-4 rounded-xl border border-gray-50 hover:bg-gray-50 transition-colors group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-[#F5E6D3] flex items-center justify-center text-[#8B4513] font-bold">
-                        {ep.guest.charAt(0)}
+                {recentEpisodes.length > 0 ? (
+                  recentEpisodes.map((ep) => (
+                    <div key={ep.id} className="flex items-center justify-between p-4 rounded-xl border border-gray-50 hover:bg-gray-50 transition-colors group">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-[#F5E6D3] flex items-center justify-center text-[#8B4513] font-bold">
+                          {ep.guests?.name?.charAt(0) || 'E'}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-[#2D1B14] group-hover:text-[#8B4513] transition-colors">{ep.title}</h4>
+                          <p className="text-sm text-gray-500">{ep.guests?.name} • {ep.scheduled_date || 'Data a definir'}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-[#2D1B14] group-hover:text-[#8B4513] transition-colors">{ep.title}</h4>
-                        <p className="text-sm text-gray-500">{ep.guest} • {ep.date}</p>
-                      </div>
+                      <EpisodeStatusBadge status={ep.status as EpisodeStatus} />
                     </div>
-                    <EpisodeStatusBadge status={ep.status} />
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-center py-8 text-gray-400 text-sm italic">Nenhum episódio cadastrado ainda.</p>
+                )}
               </div>
             </CardContent>
           </Card>
