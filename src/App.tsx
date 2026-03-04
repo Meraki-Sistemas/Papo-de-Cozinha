@@ -10,6 +10,8 @@ import CreateEpisode from "./pages/CreateEpisode";
 import PublicScript from "./pages/PublicScript";
 import CalendarPage from "./pages/Calendar";
 import PostProduction from "./pages/PostProduction";
+import Episodes from "./pages/Episodes";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,7 +30,8 @@ const App = () => (
           <Route path="/public/script/:id" element={<PublicScript />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/episodes/post/:id" element={<PostProduction />} />
-          <Route path="/episodes" element={<Index />} /> {/* Fallback para demo */}
+          <Route path="/episodes" element={<Episodes />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

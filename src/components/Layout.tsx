@@ -6,7 +6,7 @@ import {
   Users, 
   Calendar, 
   FileText, 
-  Settings,
+  Settings as SettingsIcon,
   Coffee
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     { icon: Users, label: 'Convidados', path: '/guests' },
     { icon: Calendar, label: 'Agenda', path: '/calendar' },
     { icon: FileText, label: 'Roteiros', path: '/scripts' },
+    { icon: SettingsIcon, label: 'Configurações', path: '/settings' },
   ];
 
   return (
