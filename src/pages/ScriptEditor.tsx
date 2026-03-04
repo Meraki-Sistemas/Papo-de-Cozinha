@@ -1,8 +1,8 @@
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Sparkles, Save, Share2, MessageSquare, Info } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sparkles, Save, Share2, MessageSquare, Info, History, Clock } from "lucide-react";
 import { useState } from "react";
 import { showSuccess } from "@/utils/toast";
 
@@ -52,33 +52,70 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
           </div>
 
           <div className="space-y-6">
-            <Card className="border-none shadow-sm bg-[#FDF8F3]">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold flex items-center gap-2 text-[#8B4513]">
-                  <Sparkles size={16} /> Assistente Aiyê
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-xs text-gray-600">Gere perguntas baseadas nos eixos do podcast:</p>
-                <div className="grid grid-cols-1 gap-2">
-                  <Button variant="secondary" size="sm" className="justify-start text-xs bg-white border-orange-100 hover:bg-orange-50">
-                    Eixo: Axé & Espiritualidade
-                  </Button>
-                  <Button variant="secondary" size="sm" className="justify-start text-xs bg-white border-orange-100 hover:bg-orange-50">
-                    Eixo: Educação Popular
-                  </Button>
-                  <Button variant="secondary" size="sm" className="justify-start text-xs bg-white border-orange-100 hover:bg-orange-50">
-                    Eixo: Sociedade & Luta
-                  </Button>
-                </div>
-                <div className="pt-4 border-t border-orange-100">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2">Contexto do Convidado</p>
-                  <div className="bg-white p-3 rounded-lg text-xs text-gray-600 border border-orange-50">
-                    "Tiganá Santana é o primeiro compositor brasileiro a apresentar um álbum com canções em línguas africanas..."
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <Tabs defaultValue="ai" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-gray-100">
+                <TabsTrigger value="ai" className="gap-2"><Sparkles size={14} /> IA</TabsTrigger>
+                <TabsTrigger value="history" className="gap-2"><History size={14} /> Histórico</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="ai">
+                <Card className="border-none shadow-sm bg-[#FDF8F3] mt-4">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-[#8B4513]">
+                      Assistente Aiyê
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-xs text-gray-600">Gere perguntas baseadas nos eixos:</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      <Button variant="secondary" size="sm" className="justify-start text-xs bg-white border-orange-100 hover:bg-orange-50">
+                        Eixo: Axé & Espiritualidade
+                      </Button>
+                      <Button variant="secondary" size="sm" className="justify-start text-xs bg-white border-orange-100 hover:bg-orange-50">
+                        Eixo: Educação Popular
+                      </Button>
+                    </div>
+                    <div className="pt-4 border-t border-orange-100">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2">Contexto do Convidado</p>
+                      <div className="bg-white p-3 rounded-lg text-xs text-gray-600 border border-orange-50">
+                        "Tiganá Santana é o primeiro compositor brasileiro..."
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="history">
+                <Card className="border-none shadow-sm mt-4">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-bold">Versões Salvas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-[#8B4513]">v2.1 (Atual)</span>
+                        <Clock size={10} className="text-gray-400" />
+                      </div>
+                      <p className="text-[10px] text-gray-500">Hoje, 14:30 por Silvana</p>
+                    </div>
+                    <div className="p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-gray-400">v2.0</span>
+                        <Clock size={10} className="text-gray-400" />
+                      </div>
+                      <p className="text-[10px] text-gray-500">Ontem, 18:15 por Silvana</p>
+                    </div>
+                    <div className="p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-gray-400">v1.0 (IA Inicial)</span>
+                        <Clock size={10} className="text-gray-400" />
+                      </div>
+                      <p className="text-[10px] text-gray-500">14 Out, 10:00 por Sistema</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
 
             <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
@@ -89,7 +126,7 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
               <CardContent>
                 <div className="text-center py-8">
                   <Info size={24} className="mx-auto text-gray-300 mb-2" />
-                  <p className="text-xs text-gray-400">Nenhum comentário do convidado ainda.</p>
+                  <p className="text-xs text-gray-400">Nenhum comentário ainda.</p>
                 </div>
               </CardContent>
             </Card>
