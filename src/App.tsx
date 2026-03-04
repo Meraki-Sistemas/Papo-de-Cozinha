@@ -2,7 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
 import Index from "./pages/Index";
 import ScriptEditor from "./pages/ScriptEditor";
 import Guests from "./pages/Guests";
@@ -17,9 +20,33 @@ import Settings from "./pages/Settings";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import Analytics from "./pages/Analytics";
 import MediaLibrary from "./pages/MediaLibrary";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) return null;
+  if (!session) return <Navigate to="/login" />;
+
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,20 +55,21 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/scripts" element={<ScriptEditor />} />
-          <Route path="/guests" element={<Guests />} />
-          <Route path="/guests/:id" element={<GuestDetail />} />
-          <Route path="/episodes/new" element={<CreateEpisode />} />
-          <Route path="/episodes/:id" element={<EpisodeDetail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/scripts" element={<ProtectedRoute><ScriptEditor /></ProtectedRoute>} />
+          <Route path="/guests" element={<ProtectedRoute><Guests /></ProtectedRoute>} />
+          <Route path="/guests/:id" element={<ProtectedRoute><GuestDetail /></ProtectedRoute>} />
+          <Route path="/episodes/new" element={<ProtectedRoute><CreateEpisode /></ProtectedRoute>} />
+          <Route path="/episodes/:id" element={<ProtectedRoute><EpisodeDetail /></ProtectedRoute>} />
           <Route path="/public/script/:id" element={<PublicScript />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/episodes/post/:id" element={<PostProduction />} />
-          <Route path="/episodes" element={<Episodes />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/knowledge" element={<KnowledgeBase />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/media" element={<MediaLibrary />} />
+          <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+          <Route path="/episodes/post/:id" element={<ProtectedRoute><PostProduction /></ProtectedRoute>} />
+          <Route path="/episodes" element={<ProtectedRoute><Episodes /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/knowledge" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/media" element={<ProtectedRoute><MediaLibrary /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
