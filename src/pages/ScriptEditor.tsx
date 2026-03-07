@@ -1,13 +1,19 @@
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, Save, Share2, MessageSquare, Info, History, Clock } from "lucide-react";
-import { useState } from "react";
+import { Save, Share2, MessageSquare, Info, History, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
 import { showSuccess } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
-import ScriptAIGenerator from "@/components/ScriptAIGenerator";
+
+type ScriptVersion = {
+  id: string;
+  createdAt: string;
+  author?: string;
+  content: string;
+};
+
+const STORAGE_KEY = "script_versions";
 
 const ScriptEditor = () => {
   const [script, setScript] = useState(`
@@ -16,13 +22,13 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
 
 # Bloco 1: Axé e Espiritualidade
 - Como a sua caminhada no terreiro influenciou sua visão sobre educação popular?
-- [IA Sugestão]: De que forma o conceito de 'Itan' pode ser aplicado na sala de aula moderna?
 
 # Bloco 2: Educação e Sociedade
 - O papel da universidade na descolonização do pensamento.
   `);
 
   const [displayName, setDisplayName] = useState<string>("");
+  const [versions, setVersions] = useState<ScriptVersion[]>([]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -43,8 +49,20 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
     loadUser();
   }, []);
 
-  const insertSnippet = (text: string) => {
-    setScript((prev) => `${prev}\n${text}`);
+  useEffect(() => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        const list = JSON.parse(raw) as ScriptVersion[];
+        setVersions(Array.isArray(list) ? list : []);
+      } catch {
+        setVersions([]);
+      }
+    }
+  }, []);
+
+  const saveVersionsToStorage = (list: ScriptVersion[]) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   };
 
   const handleShare = async () => {
@@ -53,19 +71,37 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
     showSuccess("Link público copiado!");
   };
 
+  const handleSaveVersion = () => {
+    const newVersion: ScriptVersion = {
+      id: String(Date.now()),
+      createdAt: new Date().toISOString(),
+      author: displayName,
+      content: script,
+    };
+    const next = [newVersion, ...versions].slice(0, 50); // limita histórico
+    setVersions(next);
+    saveVersionsToStorage(next);
+    showSuccess("Versão salva com sucesso!");
+  };
+
+  const loadVersion = (v: ScriptVersion) => {
+    setScript(v.content);
+    showSuccess("Versão carregada no editor.");
+  };
+
   return (
     <Layout>
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[#2D1B14]">Editor de Roteiro</h1>
-            <p className="text-sm text-gray-500">Episódio: Ancestralidade e Tecnologia • Convidado: Tiganá Santana</p>
+            <p className="text-sm text-gray-500">Edite e salve versões do roteiro para revisão e aprovação.</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" className="gap-2" onClick={handleShare}>
               <Share2 size={18} /> Compartilhar
             </Button>
-            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => showSuccess("Versão salva com sucesso!")}>
+            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={handleSaveVersion}>
               <Save size={18} /> Salvar Versão
             </Button>
           </div>
@@ -79,63 +115,43 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
                   className="w-full h-[600px] p-8 focus:outline-none resize-none font-serif text-lg leading-relaxed bg-transparent"
                   value={script}
                   onChange={(e) => setScript(e.target.value)}
-                  placeholder="Comece a escrever ou use a IA para gerar blocos..."
+                  placeholder="Comece a escrever o roteiro..."
                 />
               </CardContent>
             </Card>
           </div>
 
           <div className="space-y-6">
-            <Tabs defaultValue="ai" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-gray-100">
-                <TabsTrigger value="ai" className="gap-2"><Sparkles size={14} /> IA</TabsTrigger>
-                <TabsTrigger value="history" className="gap-2"><History size={14} /> Histórico</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="ai">
-                <Card className="border-none shadow-sm bg-[#FDF8F3] mt-4">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-[#8B4513]">
-                      Assistente Aiyê
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ScriptAIGenerator onInsert={insertSnippet} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="history">
-                <Card className="border-none shadow-sm mt-4">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-bold">Versões Salvas</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+            <Card className="border-none shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <History size={16} /> Versões Salvas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {versions.length === 0 ? (
+                  <div className="text-xs text-gray-500 italic">Nenhuma versão salva ainda.</div>
+                ) : (
+                  versions.map((v, idx) => (
+                    <button
+                      key={v.id}
+                      className="w-full text-left p-3 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all"
+                      onClick={() => loadVersion(v)}
+                    >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-bold text-[#8B4513]">v2.1 (Atual)</span>
+                        <span className={`text-[10px] font-bold ${idx === 0 ? "text-[#8B4513]" : "text-gray-400"}`}>
+                          {idx === 0 ? "Mais recente" : `v${versions.length - idx}`}
+                        </span>
                         <Clock size={10} className="text-gray-400" />
                       </div>
-                      <p className="text-[10px] text-gray-500">Hoje, 14:30 {displayName ? `por ${displayName}` : ""}</p>
-                    </div>
-                    <div className="p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-bold text-gray-400">v2.0</span>
-                        <Clock size={10} className="text-gray-400" />
-                      </div>
-                      <p className="text-[10px] text-gray-500">Ontem, 18:15 {displayName ? `por ${displayName}` : ""}</p>
-                    </div>
-                    <div className="p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-bold text-gray-400">v1.0 (IA Inicial)</span>
-                        <Clock size={10} className="text-gray-400" />
-                      </div>
-                      <p className="text-[10px] text-gray-500">14 Out, 10:00 por Sistema</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+                      <p className="text-[10px] text-gray-500">
+                        {new Date(v.createdAt).toLocaleString()} {v.author ? `• ${v.author}` : ""}
+                      </p>
+                    </button>
+                  ))
+                )}
+              </CardContent>
+            </Card>
 
             <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
