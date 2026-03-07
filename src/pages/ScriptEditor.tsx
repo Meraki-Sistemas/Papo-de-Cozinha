@@ -49,6 +49,7 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
     loadUser();
   }, []);
 
+  // Carrega versões do storage ao montar
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -75,10 +76,10 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
     const newVersion: ScriptVersion = {
       id: String(Date.now()),
       createdAt: new Date().toISOString(),
-      author: displayName,
+      author: displayName || undefined,
       content: script,
     };
-    const next = [newVersion, ...versions].slice(0, 50); // limita histórico
+    const next = [newVersion, ...versions].slice(0, 50);
     setVersions(next);
     saveVersionsToStorage(next);
     showSuccess("Versão salva com sucesso!");
