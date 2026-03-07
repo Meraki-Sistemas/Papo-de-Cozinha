@@ -24,7 +24,10 @@ const CreateEpisode = () => {
 
   useEffect(() => {
     const fetchGuests = async () => {
-      const { data } = await supabase.from('guests').select('id, name').order('name');
+      const { data, error } = await supabase.from('guests').select('id, name').order('name');
+      if (error) {
+        showError("Não foi possível carregar convidados.");
+      }
       setGuests(data || []);
       setLoadingGuests(false);
     };
@@ -90,9 +93,9 @@ const CreateEpisode = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>Convidado</Label>
-                <Select onValueChange={setGuestId} value={guestId}>
+                <Select onValueChange={setGuestId} value={guestId} disabled={loadingGuests || guests.length === 0}>
                   <SelectTrigger className="bg-gray-50 border-none h-12">
-                    <SelectValue placeholder={loadingGuests ? "Carregando..." : "Selecione um convidado"} />
+                    <SelectValue placeholder={loadingGuests ? "Carregando..." : (guests.length === 0 ? "Nenhum convidado cadastrado" : "Selecione um convidado")} />
                   </SelectTrigger>
                   <SelectContent>
                     {guests.map(guest => (
@@ -100,6 +103,9 @@ const CreateEpisode = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {(!loadingGuests && guests.length === 0) && (
+                  <p className="text-xs text-gray-500 mt-1">Cadastre um convidado na seção Convidados antes de criar um episódio.</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Data Prevista</Label>
@@ -147,7 +153,7 @@ const CreateEpisode = () => {
               <Button 
                 className="flex-1 h-12 bg-[#8B4513] hover:bg-[#6F370F] gap-2" 
                 onClick={handleCreate}
-                disabled={submitting}
+                disabled={submitting || !title || !guestId}
               >
                 {submitting ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
                 Criar Episódio

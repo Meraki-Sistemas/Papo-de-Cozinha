@@ -16,12 +16,16 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { EpisodeStatusBadge, EpisodeStatus } from "@/components/EpisodeStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
+import { showError, showSuccess } from "@/utils/toast";
+
+const statusOrder: EpisodeStatus[] = ['planejado', 'roteirizacao', 'revisao', 'aprovado', 'gravado'];
 
 const EpisodeDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [episode, setEpisode] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const fetchEpisode = async () => {
@@ -53,13 +57,37 @@ const EpisodeDetail = () => {
   ];
 
   const getStepStatus = (stepKey: string) => {
-    const statusOrder = ['planejado', 'roteirizacao', 'revisao', 'aprovado', 'gravado'];
     const currentIdx = statusOrder.indexOf(episode?.status || 'planejado');
-    const stepIdx = statusOrder.indexOf(stepKey);
+    const stepIdx = statusOrder.indexOf(stepKey as EpisodeStatus);
 
     if (stepIdx < currentIdx) return 'complete';
     if (stepIdx === currentIdx) return 'current';
     return 'pending';
+  };
+
+  const advanceStatus = async () => {
+    if (!episode) return;
+    const currentIdx = statusOrder.indexOf(episode.status as EpisodeStatus);
+    const nextIdx = Math.min(currentIdx + 1, statusOrder.length - 1);
+    const nextStatus = statusOrder[nextIdx];
+    if (nextStatus === episode.status) {
+      showSuccess("O episódio já está na última etapa.");
+      return;
+    }
+    setUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('episodes')
+        .update({ status: nextStatus })
+        .eq('id', episode.id);
+      if (error) throw error;
+      setEpisode((prev: any) => ({ ...prev, status: nextStatus }));
+      showSuccess("Etapa avançada com sucesso.");
+    } catch (err: any) {
+      showError(err?.message || "Erro ao avançar etapa.");
+    } finally {
+      setUpdating(false);
+    }
   };
 
   if (loading) {
@@ -114,8 +142,13 @@ const EpisodeDetail = () => {
             <Button variant="outline" className="gap-2">
               <MessageSquare size={18} /> Notas da Equipe
             </Button>
-            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2">
-              <CheckCircle2 size={18} /> Próxima Etapa
+            <Button 
+              className="bg-[#8B4513] hover:bg-[#6F370F] gap-2"
+              onClick={advanceStatus}
+              disabled={updating}
+            >
+              {updating ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
+              Próxima Etapa
             </Button>
           </div>
         </div>

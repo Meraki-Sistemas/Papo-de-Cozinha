@@ -4,21 +4,43 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EpisodeStatusBadge, EpisodeStatus } from "@/components/EpisodeStatusBadge";
-import { Search, Filter, MoreHorizontal, Mic2, FileText, Loader2 } from "lucide-react";
+import { Search, Filter, MoreHorizontal, FileText, Loader2, Trash2, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { showError, showSuccess } from "@/utils/toast";
+
+type StatusFilter = "all" | EpisodeStatus;
+
+const statusOptions: { label: string; value: StatusFilter }[] = [
+  { label: "Todos", value: "all" },
+  { label: "Planejado", value: "planejado" },
+  { label: "Roteirização", value: "roteirizacao" },
+  { label: "Em Revisão", value: "revisao" },
+  { label: "Aprovado", value: "aprovado" },
+  { label: "Gravado", value: "gravado" },
+];
 
 const Episodes = () => {
   const navigate = useNavigate();
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEpisodes();
   }, []);
 
   const fetchEpisodes = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('episodes')
@@ -29,15 +51,52 @@ const Episodes = () => {
       setEpisodes(data || []);
     } catch (error) {
       console.error("Erro ao buscar episódios:", error);
+      showError("Não foi possível carregar os episódios.");
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredEpisodes = episodes.filter(ep => 
-    ep.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ep.guests?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEpisodes = episodes
+    .filter(ep => 
+      ep.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ep.guests?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter(ep => statusFilter === "all" ? true : ep.status === statusFilter);
+
+  const updateStatus = async (id: string, newStatus: EpisodeStatus) => {
+    setUpdatingId(id);
+    try {
+      const { error } = await supabase
+        .from('episodes')
+        .update({ status: newStatus })
+        .eq('id', id);
+      if (error) throw error;
+      showSuccess("Status do episódio atualizado.");
+      await fetchEpisodes();
+    } catch (err: any) {
+      showError(err?.message || "Erro ao atualizar status.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const deleteEpisode = async (id: string) => {
+    if (!window.confirm("Tem certeza que deseja excluir este episódio? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+    setUpdatingId(id);
+    try {
+      const { error } = await supabase.from('episodes').delete().eq('id', id);
+      if (error) throw error;
+      showSuccess("Episódio excluído com sucesso.");
+      await fetchEpisodes();
+    } catch (err: any) {
+      showError(err?.message || "Erro ao excluir episódio.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   return (
     <Layout>
@@ -52,7 +111,7 @@ const Episodes = () => {
           </Button>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <Input 
@@ -62,9 +121,20 @@ const Episodes = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="gap-2">
-            <Filter size={18} /> Filtros
-          </Button>
+
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-gray-400" />
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <SelectTrigger className="w-[200px] bg-white border-gray-200">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Card className="border-none shadow-sm overflow-hidden">
@@ -97,19 +167,29 @@ const Episodes = () => {
                         <EpisodeStatusBadge status={ep.status as EpisodeStatus} />
                       </td>
                       <td className="p-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-gray-400 hover:text-[#8B4513]"
-                            onClick={() => navigate(`/episodes/${ep.id}`)}
-                          >
-                            <FileText size={16} />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400">
-                            <MoreHorizontal size={16} />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400">
+                              {updatingId === ep.id ? <Loader2 className="animate-spin" size={16} /> : <MoreHorizontal size={16} />}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => navigate(`/episodes/${ep.id}`)}>
+                              <FileText className="mr-2 h-4 w-4" /> Abrir
+                            </DropdownMenuItem>
+                            <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-gray-400 font-bold">
+                              Alterar status
+                            </div>
+                            {(["planejado","roteirizacao","revisao","aprovado","gravado"] as EpisodeStatus[]).map(st => (
+                              <DropdownMenuItem key={st} onClick={() => updateStatus(ep.id, st)}>
+                                <CheckCircle2 className="mr-2 h-4 w-4" /> {statusOptions.find(o => o.value === st)?.label}
+                              </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuItem className="text-red-600 focus:text-red-700" onClick={() => deleteEpisode(ep.id)}>
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
