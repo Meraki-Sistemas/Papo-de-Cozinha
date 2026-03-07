@@ -212,10 +212,10 @@ const EpisodeDetail = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card 
                 className="border-none shadow-sm hover:bg-orange-50 transition-colors cursor-pointer" 
-                onClick={() => navigate("/scripts")}
+                onClick={() => navigate(`/episodes/${episode.id}/script`)}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate("/scripts"); }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/episodes/${episode.id}/script`); }}
               >
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className="p-3 bg-white rounded-xl shadow-sm text-orange-600">

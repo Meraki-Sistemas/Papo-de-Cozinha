@@ -36,6 +36,7 @@ const App = () => {
             {/* Rotas Protegidas */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/scripts" element={<ProtectedRoute><ScriptEditor /></ProtectedRoute>} />
+            <Route path="/episodes/:id/script" element={<ProtectedRoute><ScriptEditor /></ProtectedRoute>} />
             <Route path="/guests" element={<ProtectedRoute><Guests /></ProtectedRoute>} />
             <Route path="/guests/:id" element={<ProtectedRoute><GuestDetail /></ProtectedRoute>} />
             <Route path="/episodes/new" element={<ProtectedRoute><CreateEpisode /></ProtectedRoute>} />

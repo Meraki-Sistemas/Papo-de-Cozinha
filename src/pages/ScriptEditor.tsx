@@ -2,9 +2,10 @@ import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Save, Share2, MessageSquare, Info, History, Clock } from "lucide-react";
-import { useEffect, useState } from "react";
-import { showSuccess } from "@/utils/toast";
+import { useEffect, useMemo, useState } from "react";
+import { showError, showSuccess } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useParams } from "react-router-dom";
 
 type ScriptVersion = {
   id: string;
@@ -16,6 +17,9 @@ type ScriptVersion = {
 const STORAGE_KEY = "script_versions";
 
 const ScriptEditor = () => {
+  const { id: episodeId } = useParams();
+  const storageKey = useMemo(() => `${STORAGE_KEY}__${episodeId || "global"}`, [episodeId]);
+  
   const [script, setScript] = useState(`
 # Abertura
 Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber acadêmico e o saber ancestral...
@@ -49,25 +53,49 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
     loadUser();
   }, []);
 
-  // Carrega versões do storage ao montar
+  // Carregar roteiro do Supabase (se houver episodeId) e versões locais específicas do episódio
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        const list = JSON.parse(raw) as ScriptVersion[];
-        setVersions(Array.isArray(list) ? list : []);
-      } catch {
+    const load = async () => {
+      // Carrega versões locais (por episódio)
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        try {
+          const list = JSON.parse(raw) as ScriptVersion[];
+          setVersions(Array.isArray(list) ? list : []);
+        } catch {
+          setVersions([]);
+        }
+      } else {
         setVersions([]);
       }
-    }
-  }, []);
+      // Carrega conteúdo do episódio do banco
+      if (episodeId) {
+        const { data, error } = await supabase
+          .from("episodes")
+          .select("script_content")
+          .eq("id", episodeId)
+          .single();
+        if (error) {
+          console.error(error);
+          showError("Não foi possível carregar o roteiro do episódio.");
+          return;
+        }
+        if (data?.script_content) {
+          setScript(data.script_content as string);
+        }
+      }
+    };
+    load();
+  }, [episodeId, storageKey]);
 
   const saveVersionsToStorage = (list: ScriptVersion[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    localStorage.setItem(storageKey, JSON.stringify(list));
   };
 
   const handleShare = async () => {
-    const link = `${window.location.origin}/public/script/demo`;
+    const link = episodeId
+      ? `${window.location.origin}/public/script/${episodeId}`
+      : `${window.location.origin}/public/script/demo`;
     await navigator.clipboard.writeText(link);
     showSuccess("Link público copiado!");
   };
@@ -82,12 +110,30 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
     const next = [newVersion, ...versions].slice(0, 50);
     setVersions(next);
     saveVersionsToStorage(next);
-    showSuccess("Versão salva com sucesso!");
+    showSuccess("Versão salva no histórico local!");
   };
 
   const loadVersion = (v: ScriptVersion) => {
     setScript(v.content);
     showSuccess("Versão carregada no editor.");
+  };
+
+  // Salvar no banco (se houver episodeId) ao clicar em "Salvar Versão"
+  const handlePersistToSupabase = async () => {
+    if (!episodeId) {
+      showSuccess("Versão salva localmente (sem episódio vinculado).");
+      return;
+    }
+    const { error } = await supabase
+      .from("episodes")
+      .update({ script_content: script })
+      .eq("id", episodeId);
+    if (error) {
+      console.error(error);
+      showError("Falha ao salvar roteiro no episódio.");
+      return;
+    }
+    showSuccess("Roteiro salvo no episódio!");
   };
 
   return (
@@ -96,13 +142,17 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[#2D1B14]">Editor de Roteiro</h1>
-            <p className="text-sm text-gray-500">Edite e salve versões do roteiro para revisão e aprovação.</p>
+            <p className="text-sm text-gray-500">
+              {episodeId
+                ? "Editando o roteiro vinculado a um episódio. As versões ficam no histórico local e o conteúdo é salvo no episódio."
+                : "Editor sem vínculo de episódio. As versões são salvas apenas no histórico local deste navegador."}
+            </p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" className="gap-2" onClick={handleShare}>
               <Share2 size={18} /> Compartilhar
             </Button>
-            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={handleSaveVersion}>
+            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => { handleSaveVersion(); handlePersistToSupabase(); }}>
               <Save size={18} /> Salvar Versão
             </Button>
           </div>
