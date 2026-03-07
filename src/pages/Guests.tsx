@@ -4,12 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserPlus, MoreVertical, Heart, Loader2 } from "lucide-react";
+import { Search, UserPlus, MoreVertical, Heart, Loader2, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import NewGuestDialog from "@/components/NewGuestDialog";
-import { showError } from "@/utils/toast";
-import { showSuccess } from "@/utils/toast";
+import EditGuestDialog from "@/components/EditGuestDialog";
+import { showError, showSuccess } from "@/utils/toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 const Guests = () => {
   const navigate = useNavigate();
@@ -17,6 +23,8 @@ const Guests = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [openNewGuest, setOpenNewGuest] = useState(false);
+  const [openEditGuest, setOpenEditGuest] = useState(false);
+  const [currentGuest, setCurrentGuest] = useState<any | null>(null);
 
   useEffect(() => {
     fetchGuests();
@@ -37,6 +45,21 @@ const Guests = () => {
       showError("Não foi possível carregar os convidados.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const askDelete = async (guest: any) => {
+    if (!window.confirm(`Excluir convidado "${guest.name}"? Esta ação não pode ser desfeita.`)) return;
+    try {
+      const { error } = await supabase.from("guests").delete().eq("id", guest.id);
+      if (error) {
+        showError(error.message.includes("permission") ? "Permissão negada: ajuste as políticas RLS para permitir DELETE em 'guests'." : error.message);
+        return;
+      }
+      showSuccess("Convidado excluído.");
+      fetchGuests();
+    } catch (err: any) {
+      showError(err?.message || "Erro ao excluir convidado.");
     }
   };
 
@@ -95,9 +118,21 @@ const Guests = () => {
                       <p className="text-xs text-gray-500">{guest.role}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="text-gray-400" onClick={(e) => e.stopPropagation()}>
-                    <MoreVertical size={18} />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-gray-400" onClick={(e) => e.stopPropagation()}>
+                        <MoreVertical size={18} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onClick={() => { setCurrentGuest(guest); setOpenEditGuest(true); }}>
+                        <Pencil className="mr-2 h-4 w-4" /> Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-600 focus:text-red-700" onClick={() => askDelete(guest)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap gap-2">
@@ -146,6 +181,13 @@ const Guests = () => {
           open={openNewGuest} 
           onOpenChange={setOpenNewGuest}
           onCreated={() => fetchGuests()}
+        />
+
+        <EditGuestDialog
+          open={openEditGuest}
+          onOpenChange={setOpenEditGuest}
+          guest={currentGuest}
+          onSaved={() => fetchGuests()}
         />
       </div>
     </Layout>

@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { 
   FileText, 
   Mic2, 
-  Scissors, 
-  Share2, 
   CheckCircle2, 
   Calendar,
   ArrowLeft,
@@ -17,6 +15,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { EpisodeStatusBadge, EpisodeStatus } from "@/components/EpisodeStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
+import EpisodeChecklist from "@/components/EpisodeChecklist";
+import TeamNotes from "@/components/TeamNotes";
 
 const statusOrder: EpisodeStatus[] = ['planejado', 'roteirizacao', 'revisao', 'aprovado', 'gravado'];
 
@@ -139,7 +139,7 @@ const EpisodeDetail = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2" onClick={() => showSuccess("Notas da equipe: funcionalidade em breve.")}>
+            <Button variant="outline" className="gap-2" onClick={() => showSuccess("Notas da equipe: funcionalidade disponível abaixo.")}>
               <MessageSquare size={18} /> Notas da Equipe
             </Button>
             <Button 
@@ -154,7 +154,6 @@ const EpisodeDetail = () => {
           </div>
         </div>
 
-        {/* Timeline de Progresso */}
         <Card className="border-none shadow-sm bg-white overflow-hidden">
           <CardContent className="p-8">
             <div className="relative flex justify-between">
@@ -182,80 +181,34 @@ const EpisodeDetail = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            {/* Checklist Ético */}
             <Card className="border-none shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <CheckCircle2 size={20} className="text-emerald-500" /> Checklist de Cuidado
-                </CardTitle>
+                <CardTitle className="text-lg font-bold">Checklist de Cuidado</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-[#FDF8F3] p-4 rounded-xl border border-orange-50 mb-4">
-                  <p className="text-xs font-bold text-[#8B4513] uppercase mb-1">Protocolo do Convidado</p>
-                  <p className="text-sm text-gray-600 italic">"{episode.guests?.care_protocol || 'Sem observações específicas.'}"</p>
-                </div>
-                {[
-                  "Consultar calendário litúrgico do convidado",
-                  "Revisar termos sensíveis na Base de Saberes",
-                  "Enviar link de aprovação prévia do roteiro",
-                  "Preparar ambiente de acolhimento no estúdio"
-                ].map((task, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
-                    <div className="w-5 h-5 rounded border-2 border-gray-200 group-hover:border-[#E89D1E] transition-colors" />
-                    <span className="text-sm text-gray-700">{task}</span>
-                  </div>
-                ))}
+              <CardContent>
+                <EpisodeChecklist episodeId={episode.id} />
               </CardContent>
             </Card>
 
-            {/* Ações Rápidas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card 
-                className="border-none shadow-sm hover:bg-orange-50 transition-colors cursor-pointer" 
-                onClick={() => navigate(`/episodes/${episode.id}/script`)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/episodes/${episode.id}/script`); }}
-              >
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="p-3 bg-white rounded-xl shadow-sm text-orange-600">
-                    <FileText size={24} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-[#2D1B14]">Editar Roteiro</p>
-                    <p className="text-xs text-gray-500">Clique para abrir o editor</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card 
-                className="border-none shadow-sm hover:bg-blue-50 transition-colors cursor-pointer" 
-                onClick={() => navigate("/calendar")}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate("/calendar"); }}
-              >
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="p-3 bg-white rounded-xl shadow-sm text-blue-600">
-                    <Calendar size={24} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-[#2D1B14]">Ver na Agenda</p>
-                    <p className="text-xs text-gray-500">{episode.scheduled_date || 'Data a definir'}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="border-none shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg font-bold">Notas da Equipe</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TeamNotes storagePrefix="episode_notes" entityId={episode.id} />
+              </CardContent>
+            </Card>
           </div>
 
           <div className="space-y-6">
             <Card className="border-none shadow-sm bg-[#2D1B14] text-white">
               <CardHeader>
-                <CardTitle className="text-sm font-bold">Resumo da IA</CardTitle>
+                <CardTitle className="text-sm font-bold">Resumo</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10">
                   <p className="text-xs text-gray-300 leading-relaxed">
-                    "Este episódio foca na interseção entre tecnologia e ancestralidade. O roteiro atual está sendo processado com base nos eixos selecionados."
+                    Este episódio foca na interseção entre tecnologia e ancestralidade. Use o checklist e as notas para coordenar a gravação com cuidado.
                   </p>
                 </div>
                 <Button variant="secondary" className="w-full bg-white/10 border-none text-white hover:bg-white/20 text-xs" onClick={() => showSuccess("Briefing gerado para a equipe! (demonstração)")}>

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,14 +8,16 @@ import {
   Globe, 
   Heart, 
   History, 
-  MessageSquare,
   ArrowLeft,
   Edit3,
   Loader2
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { showSuccess } from "@/utils/toast";
+import { showError, showSuccess } from "@/utils/toast";
+import TeamNotes from "@/components/TeamNotes";
+import EditGuestDialog from "@/components/EditGuestDialog";
 
 const GuestDetail = () => {
   const navigate = useNavigate();
@@ -24,37 +25,32 @@ const GuestDetail = () => {
   const [guest, setGuest] = useState<any>(null);
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openEdit, setOpenEdit] = useState(false);
 
-  useEffect(() => {
-    const fetchGuestData = async () => {
-      try {
-        // Busca dados do convidado
-        const { data: guestData, error: guestError } = await supabase
-          .from('guests')
-          .select('*')
-          .eq('id', id)
-          .single();
-        
-        if (guestError) throw guestError;
-        setGuest(guestData);
+  const load = async () => {
+    try {
+      const { data: guestData, error: guestError } = await supabase
+        .from('guests')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (guestError) throw guestError;
+      setGuest(guestData);
 
-        // Busca episódios relacionados
-        const { data: episodesData } = await supabase
-          .from('episodes')
-          .select('*')
-          .eq('guest_id', id)
-          .order('created_at', { ascending: false });
-        
-        setEpisodes(episodesData || []);
-      } catch (error) {
-        console.error("Erro ao buscar dados do convidado:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const { data: episodesData } = await supabase
+        .from('episodes')
+        .select('id,title,status,scheduled_date')
+        .eq('guest_id', id)
+        .order('created_at', { ascending: false });
+      setEpisodes(episodesData || []);
+    } catch (e: any) {
+      showError(e?.message || "Erro ao carregar convidado.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchGuestData();
-  }, [id]);
+  useEffect(() => { load(); }, [id]);
 
   if (loading) {
     return (
@@ -89,24 +85,21 @@ const GuestDetail = () => {
         </Button>
 
         <div className="flex flex-col md:flex-row gap-8 items-start">
-          {/* Sidebar do Perfil */}
           <div className="w-full md:w-80 space-y-6">
             <Card className="border-none shadow-sm overflow-hidden">
               <div className="h-32 bg-[#8B4513]" />
               <CardContent className="p-6 -mt-16 text-center">
                 <div className="w-32 h-32 rounded-full bg-[#F5E6D3] border-4 border-white shadow-lg mx-auto flex items-center justify-center text-[#8B4513] text-4xl font-bold mb-4">
-                  {guest.name.charAt(0)}
+                  {guest.name?.charAt(0) || "?"}
                 </div>
                 <h2 className="text-2xl font-bold text-[#2D1B14]">{guest.name}</h2>
                 <p className="text-sm text-gray-500 mb-6">{guest.role || 'Convidado'}</p>
-                
                 <div className="flex flex-wrap justify-center gap-2 mb-6">
                   {guest.axes?.map((axis: string) => (
                     <Badge key={axis} className="bg-orange-50 text-orange-700 border-none">{axis}</Badge>
                   ))}
                 </div>
-
-                <Button className="w-full bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => showSuccess("Edição de perfil em breve.")}>
+                <Button className="w-full bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => setOpenEdit(true)}>
                   <Edit3 size={16} /> Editar Perfil
                 </Button>
               </CardContent>
@@ -130,7 +123,6 @@ const GuestDetail = () => {
             </Card>
           </div>
 
-          {/* Conteúdo Principal */}
           <div className="flex-1 space-y-6">
             <Card className="border-none shadow-sm bg-[#FDF8F3] border-l-4 border-[#8B4513]">
               <CardHeader>
@@ -161,11 +153,9 @@ const GuestDetail = () => {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-bold text-[#2D1B14] group-hover:text-[#8B4513]">{ep.title}</h4>
-                        <Badge className="bg-emerald-100 text-emerald-700 border-none uppercase text-[10px]">{ep.status}</Badge>
+                        <Badge className="bg-gray-100 text-gray-700 border-none uppercase text-[10px]">{ep.status}</Badge>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        {ep.scheduled_date ? `Agendado para ${ep.scheduled_date}` : 'Data não definida'}
-                      </p>
+                      <p className="text-xs text-gray-500">{ep.scheduled_date ? `Agendado para ${ep.scheduled_date}` : 'Data não definida'}</p>
                     </div>
                   ))
                 ) : (
@@ -176,21 +166,22 @@ const GuestDetail = () => {
 
             <Card className="border-none shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <MessageSquare size={20} /> Notas de Produção
-                </CardTitle>
+                <CardTitle className="text-lg font-bold">Notas da Equipe</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <Button variant="outline" className="w-full border-dashed text-gray-400 hover:text-[#8B4513] hover:border-[#8B4513]" onClick={() => showSuccess("Nota adicionada (demonstração).")}>
-                    + Adicionar Nota
-                  </Button>
-                </div>
+                <TeamNotes storagePrefix="guest_notes" entityId={guest.id} />
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      <EditGuestDialog
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        guest={guest}
+        onSaved={() => { showSuccess("Perfil atualizado."); load(); }}
+      />
     </Layout>
   );
 };
