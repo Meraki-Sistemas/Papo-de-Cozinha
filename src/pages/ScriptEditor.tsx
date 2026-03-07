@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles, Save, Share2, MessageSquare, Info, History, Clock } from "lucide-react";
 import { useState } from "react";
 import { showSuccess } from "@/utils/toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 const ScriptEditor = () => {
   const [script, setScript] = useState(`
@@ -19,8 +21,35 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
 - O papel da universidade na descolonização do pensamento.
   `);
 
+  const [displayName, setDisplayName] = useState<string>("");
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const email = session?.user?.email;
+      const userId = session?.user?.id;
+      if (!userId) {
+        setDisplayName(email || "");
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", userId)
+        .single();
+      setDisplayName(profile?.full_name?.trim() || email || "");
+    };
+    loadUser();
+  }, []);
+
   const insertSnippet = (text: string) => {
     setScript((prev) => `${prev}\n${text}`);
+  };
+
+  const handleShare = async () => {
+    const link = `${window.location.origin}/public/script/demo`;
+    await navigator.clipboard.writeText(link);
+    showSuccess("Link público copiado!");
   };
 
   return (
@@ -32,7 +61,7 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
             <p className="text-sm text-gray-500">Episódio: Ancestralidade e Tecnologia • Convidado: Tiganá Santana</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2" onClick={() => showSuccess("Link público copiado!")}>
+            <Button variant="outline" className="gap-2" onClick={handleShare}>
               <Share2 size={18} /> Compartilhar
             </Button>
             <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => showSuccess("Versão salva com sucesso!")}>
@@ -100,14 +129,14 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
                         <span className="text-[10px] font-bold text-[#8B4513]">v2.1 (Atual)</span>
                         <Clock size={10} className="text-gray-400" />
                       </div>
-                      <p className="text-[10px] text-gray-500">Hoje, 14:30 por Silvana</p>
+                      <p className="text-[10px] text-gray-500">Hoje, 14:30 {displayName ? `por ${displayName}` : ""}</p>
                     </div>
                     <div className="p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-bold text-gray-400">v2.0</span>
                         <Clock size={10} className="text-gray-400" />
                       </div>
-                      <p className="text-[10px] text-gray-500">Ontem, 18:15 por Silvana</p>
+                      <p className="text-[10px] text-gray-500">Ontem, 18:15 {displayName ? `por ${displayName}` : ""}</p>
                     </div>
                     <div className="p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
                       <div className="flex items-center justify-between mb-1">

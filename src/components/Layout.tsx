@@ -156,7 +156,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                     <p className="text-[9px] text-orange-500 mt-2 font-bold">Há poucos minutos</p>
                   </div>
                 </div>
-                <button className="w-full py-3 text-[10px] font-bold text-gray-400 hover:text-[#8B4513] bg-gray-50 transition-colors">
+                <button className="w-full py-3 text-[10px] font-bold text-gray-400 hover:text-[#8B4513] bg-gray-50 transition-colors"
+                  onClick={() => navigate("/episodes")}
+                >
                   Ver todas as notificações
                 </button>
               </PopoverContent>

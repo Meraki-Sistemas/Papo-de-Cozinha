@@ -45,9 +45,9 @@ const CalendarPage = () => {
             <p className="text-sm text-gray-500">Organize o tempo e o espaço para a escuta ativa.</p>
           </div>
           <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-gray-100">
-            <Button variant="ghost" size="icon" className="h-8 w-8"><ChevronLeft size={16} /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => showSuccess("Navegação de mês (anterior) em breve.")}><ChevronLeft size={16} /></Button>
             <span className="text-sm font-bold px-2">Outubro 2023</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8"><ChevronRight size={16} /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => showSuccess("Navegação de mês (próximo) em breve.")}><ChevronRight size={16} /></Button>
           </div>
         </div>
 

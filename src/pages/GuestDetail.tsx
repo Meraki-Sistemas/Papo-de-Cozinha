@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { showSuccess } from "@/utils/toast";
 
 const GuestDetail = () => {
   const navigate = useNavigate();
@@ -105,7 +106,7 @@ const GuestDetail = () => {
                   ))}
                 </div>
 
-                <Button className="w-full bg-[#8B4513] hover:bg-[#6F370F] gap-2">
+                <Button className="w-full bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => showSuccess("Edição de perfil em breve.")}>
                   <Edit3 size={16} /> Editar Perfil
                 </Button>
               </CardContent>
@@ -181,7 +182,7 @@ const GuestDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Button variant="outline" className="w-full border-dashed text-gray-400 hover:text-[#8B4513] hover:border-[#8B4513]">
+                  <Button variant="outline" className="w-full border-dashed text-gray-400 hover:text-[#8B4513] hover:border-[#8B4513]" onClick={() => showSuccess("Nota adicionada (demonstração).")}>
                     + Adicionar Nota
                   </Button>
                 </div>

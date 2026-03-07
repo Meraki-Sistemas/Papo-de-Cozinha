@@ -48,7 +48,7 @@ const KnowledgeBase = () => {
             <h1 className="text-2xl font-bold text-[#2D1B14]">Base de Saberes</h1>
             <p className="text-sm text-gray-500">O alicerce de conhecimento que guia nossas conversas.</p>
           </div>
-          <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2">
+          <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => showSuccess("Cadastro de referência em breve.")}>
             <Plus size={18} /> Novo Registro
           </Button>
         </div>

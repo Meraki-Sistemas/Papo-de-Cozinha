@@ -215,7 +215,7 @@ const EpisodeDetail = () => {
                 onClick={() => navigate("/scripts")}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/scripts"); }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate("/scripts"); }}
               >
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className="p-3 bg-white rounded-xl shadow-sm text-orange-600">
@@ -232,7 +232,7 @@ const EpisodeDetail = () => {
                 onClick={() => navigate("/calendar")}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/calendar"); }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate("/calendar"); }}
               >
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className="p-3 bg-white rounded-xl shadow-sm text-blue-600">
