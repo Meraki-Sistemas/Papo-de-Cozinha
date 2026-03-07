@@ -6,17 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, UserPlus, MoreVertical, Heart, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import NewGuestDialog from "@/components/NewGuestDialog";
+import { showError } from "@/utils/toast";
 
 const Guests = () => {
+  const navigate = useNavigate();
   const [guests, setGuests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [openNewGuest, setOpenNewGuest] = useState(false);
 
   useEffect(() => {
     fetchGuests();
   }, []);
 
   const fetchGuests = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('guests')
@@ -25,15 +31,16 @@ const Guests = () => {
       
       if (error) throw error;
       setGuests(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao buscar convidados:", error);
+      showError("Não foi possível carregar os convidados.");
     } finally {
       setLoading(false);
     }
   };
 
   const filteredGuests = guests.filter(guest => 
-    guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    guest.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     guest.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -45,7 +52,7 @@ const Guests = () => {
             <h1 className="text-2xl font-bold text-[#2D1B14]">Convidados</h1>
             <p className="text-sm text-gray-500">Gerencie a rede de saberes do PApo de Cozinha.</p>
           </div>
-          <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2">
+          <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => setOpenNewGuest(true)}>
             <UserPlus size={18} /> Novo Convidado
           </Button>
         </div>
@@ -70,11 +77,15 @@ const Guests = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredGuests.map((guest) => (
-              <Card key={guest.id} className="border-none shadow-sm hover:shadow-md transition-all group">
+              <Card 
+                key={guest.id} 
+                className="border-none shadow-sm hover:shadow-md transition-all group cursor-pointer"
+                onClick={() => navigate(`/guests/${guest.id}`)}
+              >
                 <CardHeader className="flex flex-row items-start justify-between pb-2">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-full bg-[#F5E6D3] flex items-center justify-center text-[#8B4513] text-xl font-bold border-2 border-white shadow-sm">
-                      {guest.name.charAt(0)}
+                      {guest.name?.charAt(0) || "?"}
                     </div>
                     <div>
                       <CardTitle className="text-lg font-bold text-[#2D1B14] group-hover:text-[#8B4513] transition-colors">
@@ -83,7 +94,7 @@ const Guests = () => {
                       <p className="text-xs text-gray-500">{guest.role}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="text-gray-400">
+                  <Button variant="ghost" size="icon" className="text-gray-400" onClick={(e) => e.stopPropagation()}>
                     <MoreVertical size={18} />
                   </Button>
                 </CardHeader>
@@ -108,7 +119,14 @@ const Guests = () => {
                   )}
 
                   <div className="pt-2 flex justify-end">
-                    <Button variant="link" className="text-[#8B4513] text-xs p-0 h-auto font-bold">
+                    <Button 
+                      variant="link" 
+                      className="text-[#8B4513] text-xs p-0 h-auto font-bold"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/guests/${guest.id}`);
+                      }}
+                    >
                       Ver Detalhes →
                     </Button>
                   </div>
@@ -122,6 +140,12 @@ const Guests = () => {
             )}
           </div>
         )}
+
+        <NewGuestDialog 
+          open={openNewGuest} 
+          onOpenChange={setOpenNewGuest}
+          onCreated={() => fetchGuests()}
+        />
       </div>
     </Layout>
   );
