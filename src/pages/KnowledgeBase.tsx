@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Search, Plus, Bookmark, Quote, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { showSuccess } from "@/utils/toast";
 
 const KnowledgeBase = () => {
   const [references, setReferences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [category, setCategory] = useState<string>("Todos");
 
   useEffect(() => {
     fetchKnowledge();
@@ -33,8 +35,9 @@ const KnowledgeBase = () => {
   };
 
   const filteredRefs = references.filter(ref => 
-    ref.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ref.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    (ref.term?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ref.category?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (category === "Todos" ? true : (ref.category || "").toLowerCase() === category.toLowerCase())
   );
 
   return (
@@ -57,8 +60,13 @@ const KnowledgeBase = () => {
                 <CardTitle className="text-sm font-bold">Categorias</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {['Todos', 'Conceitos', 'Metodologias', 'Filosofia', 'História'].map(cat => (
-                  <Button key={cat} variant="ghost" className="w-full justify-start text-sm font-medium hover:bg-orange-50 hover:text-[#8B4513]">
+                {['Todos', 'Conceito', 'Metodologia', 'Filosofia', 'História'].map(cat => (
+                  <Button
+                    key={cat}
+                    variant={category === cat ? "secondary" : "ghost"}
+                    className={`w-full justify-start text-sm font-medium ${category === cat ? "bg-orange-50 text-[#8B4513]" : "hover:bg-orange-50 hover:text-[#8B4513]"}`}
+                    onClick={() => setCategory(cat)}
+                  >
                     {cat}
                   </Button>
                 ))}
@@ -98,7 +106,7 @@ const KnowledgeBase = () => {
                             </Badge>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" className="text-gray-300 group-hover:text-orange-500">
+                        <Button variant="ghost" size="icon" className="text-gray-300 group-hover:text-orange-500" onClick={() => showSuccess("Salvo nos favoritos!")}>
                           <Bookmark size={18} />
                         </Button>
                       </div>

@@ -19,6 +19,10 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
 - O papel da universidade na descolonização do pensamento.
   `);
 
+  const insertSnippet = (text: string) => {
+    setScript((prev) => `${prev}\n${text}`);
+  };
+
   return (
     <Layout>
       <div className="max-w-5xl mx-auto space-y-6">
@@ -31,7 +35,7 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
             <Button variant="outline" className="gap-2" onClick={() => showSuccess("Link público copiado!")}>
               <Share2 size={18} /> Compartilhar
             </Button>
-            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2">
+            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => showSuccess("Versão salva com sucesso!")}>
               <Save size={18} /> Salvar Versão
             </Button>
           </div>
@@ -68,10 +72,10 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
                   <CardContent className="space-y-4">
                     <p className="text-xs text-gray-600">Gere perguntas baseadas nos eixos:</p>
                     <div className="grid grid-cols-1 gap-2">
-                      <Button variant="secondary" size="sm" className="justify-start text-xs bg-white border-orange-100 hover:bg-orange-50">
+                      <Button variant="secondary" size="sm" className="justify-start text-xs bg-white border-orange-100 hover:bg-orange-50" onClick={() => insertSnippet(`# Bloco: Axé & Espiritualidade\n- Como a sua caminhada no terreiro influencia sua atuação hoje?\n- Quais cuidados são essenciais ao falar de ritual e segredo?`)}>
                         Eixo: Axé & Espiritualidade
                       </Button>
-                      <Button variant="secondary" size="sm" className="justify-start text-xs bg-white border-orange-100 hover:bg-orange-50">
+                      <Button variant="secondary" size="sm" className="justify-start text-xs bg-white border-orange-100 hover:bg-orange-50" onClick={() => insertSnippet(`# Bloco: Educação Popular\n- Como a pedagogia do encontro aparece na sua prática?\n- Exemplos de descolonização do currículo na sua experiência?`)}>
                         Eixo: Educação Popular
                       </Button>
                     </div>

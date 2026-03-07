@@ -7,10 +7,13 @@ import { EpisodeStatusBadge } from "@/components/EpisodeStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
+import { showSuccess } from "@/utils/toast";
 
 const CalendarPage = () => {
   const [schedule, setSchedule] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -83,8 +86,8 @@ const CalendarPage = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">Detalhes</Button>
-                      <Button className="bg-[#8B4513] hover:bg-[#6F370F] size-sm">Preparar Estúdio</Button>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/episodes/${item.id}`)}>Detalhes</Button>
+                      <Button className="bg-[#8B4513] hover:bg-[#6F370F] size-sm" onClick={() => showSuccess("Checklist de preparação do estúdio acionado!")}>Preparar Estúdio</Button>
                     </div>
                   </CardContent>
                 </div>

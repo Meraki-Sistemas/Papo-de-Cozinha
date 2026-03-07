@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import NewGuestDialog from "@/components/NewGuestDialog";
 import { showError } from "@/utils/toast";
+import { showSuccess } from "@/utils/toast";
 
 const Guests = () => {
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ const Guests = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline">Filtros</Button>
+          <Button variant="outline" onClick={() => showSuccess("Filtros em breve.")}>Filtros</Button>
         </div>
 
         {loading ? (

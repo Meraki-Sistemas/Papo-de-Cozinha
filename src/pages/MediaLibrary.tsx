@@ -12,6 +12,7 @@ import {
   Volume2,
   Mic2
 } from "lucide-react";
+import { showSuccess } from "@/utils/toast";
 
 const assets = [
   { id: 1, name: "Vinheta_Abertura_Cozinha.mp3", type: "Vinheta", duration: "0:15", size: "2.4 MB" },
@@ -29,7 +30,7 @@ const MediaLibrary = () => {
             <h1 className="text-2xl font-bold text-[#2D1B14]">Biblioteca de Mídias</h1>
             <p className="text-sm text-gray-500">Os temperos sonoros que dão vida ao PApo de Cozinha.</p>
           </div>
-          <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2">
+          <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => showSuccess("Upload de arquivo em breve.")}>
             <Plus size={18} /> Upload de Arquivo
           </Button>
         </div>
@@ -39,7 +40,7 @@ const MediaLibrary = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <Input className="pl-10 bg-white border-gray-200" placeholder="Buscar por nome ou tipo..." />
           </div>
-          <Button variant="outline">Filtros</Button>
+          <Button variant="outline" onClick={() => showSuccess("Filtros em breve.")}>Filtros</Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -48,7 +49,7 @@ const MediaLibrary = () => {
               <CardContent className="p-6">
                 <div className="aspect-square bg-gray-50 rounded-2xl flex items-center justify-center mb-4 relative group-hover:bg-orange-50 transition-colors">
                   <Music size={48} className="text-gray-200 group-hover:text-orange-200 transition-colors" />
-                  <Button size="icon" className="absolute bg-[#8B4513] hover:bg-[#6F370F] rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button size="icon" className="absolute bg-[#8B4513] hover:bg-[#6F370F] rounded-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => showSuccess(`Pré-escuta: ${asset.name}`)}>
                     <Play size={20} fill="currentColor" />
                   </Button>
                 </div>
@@ -62,8 +63,8 @@ const MediaLibrary = () => {
                 <div className="pt-4 flex items-center justify-between border-t border-gray-50 mt-4">
                   <span className="text-[10px] text-gray-400">{asset.size}</span>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400"><Download size={14} /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400"><MoreVertical size={14} /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400" onClick={() => showSuccess(`Download iniciado: ${asset.name}`)}><Download size={14} /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400" onClick={() => showSuccess("Mais ações em breve.")}><MoreVertical size={14} /></Button>
                   </div>
                 </div>
               </CardContent>

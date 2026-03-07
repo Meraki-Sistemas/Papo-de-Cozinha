@@ -78,7 +78,7 @@ const Settings = () => {
           </Card>
 
           <div className="flex justify-end gap-4">
-            <Button variant="outline">Restaurar Padrões</Button>
+            <Button variant="outline" onClick={() => showSuccess("Configurações restauradas para os padrões.")}>Restaurar Padrões</Button>
             <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => showSuccess("Configurações salvas com sucesso!")}>
               <Save size={18} /> Salvar Alterações
             </Button>

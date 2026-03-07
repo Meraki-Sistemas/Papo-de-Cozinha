@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic2, Users, FileCheck, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [stats, setStats] = useState([
@@ -16,6 +17,7 @@ const Dashboard = () => {
   const [recentEpisodes, setRecentEpisodes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState<string>("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -107,13 +109,20 @@ const Dashboard = () => {
           <Card className="lg:col-span-2 border-none shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg font-bold">Próximas Gravações</CardTitle>
-              <button className="text-sm text-[#8B4513] font-medium hover:underline">Ver todos</button>
+              <button className="text-sm text-[#8B4513] font-medium hover:underline" onClick={() => navigate("/episodes")}>Ver todos</button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {recentEpisodes.length > 0 ? (
                   recentEpisodes.map((ep) => (
-                    <div key={ep.id} className="flex items-center justify-between p-4 rounded-xl border border-gray-50 hover:bg-gray-50 transition-colors group">
+                    <div
+                      key={ep.id}
+                      className="flex items-center justify-between p-4 rounded-xl border border-gray-50 hover:bg-gray-50 transition-colors group cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/episodes/${ep.id}`)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/episodes/${ep.id}`); }}
+                    >
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-[#F5E6D3] flex items-center justify-center text-[#8B4513] font-bold">
                           {ep.guests?.name?.charAt(0) || 'E'}
