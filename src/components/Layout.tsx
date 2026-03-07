@@ -12,7 +12,8 @@ import {
   BarChart3,
   Bell,
   Search,
-  Music
+  Music,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -20,10 +21,40 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { supabase } from "@/integrations/supabase/client";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [displayName, setDisplayName] = React.useState<string>("Usuário");
+
+  React.useEffect(() => {
+    let active = true;
+    const loadUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const email = session?.user?.email;
+      const userId = session?.user?.id;
+      if (!userId) {
+        active && setDisplayName("Convidado");
+        return;
+      }
+      // Tenta perfis; se não houver, cai para email
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", userId)
+        .single();
+      const name = profile?.full_name?.trim();
+      active && setDisplayName(name || email || "Usuário");
+    };
+    loadUser();
+    return () => { active = false; };
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -70,8 +101,18 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
         <div className="p-4 border-t border-white/10">
           <div className="bg-white/5 rounded-xl p-4">
-            <p className="text-[10px] text-gray-400 mb-1 uppercase tracking-wider font-bold">Produtora</p>
-            <p className="text-sm font-medium">Mãe Silvana</p>
+            <p className="text-[10px] text-gray-400 mb-1 uppercase tracking-wider font-bold">Usuário</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium truncate max-w-[150px]" title={displayName}>{displayName}</p>
+              <button
+                onClick={handleSignOut}
+                className="text-gray-300 hover:text-white transition-colors p-1"
+                aria-label="Sair"
+                title="Sair"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -111,13 +152,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 <div className="max-h-[300px] overflow-y-auto">
                   <div className="p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors">
                     <p className="text-xs font-bold text-[#2D1B14]">Roteiro Aprovado!</p>
-                    <p className="text-[10px] text-gray-500 mt-1">Mãe Beth de Oxum aprovou o roteiro do episódio #013.</p>
-                    <p className="text-[9px] text-orange-500 mt-2 font-bold">Há 5 minutos</p>
-                  </div>
-                  <div className="p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors">
-                    <p className="text-xs font-bold text-[#2D1B14]">Novo Comentário</p>
-                    <p className="text-[10px] text-gray-500 mt-1">Tiganá Santana sugeriu um ajuste no Bloco 2.</p>
-                    <p className="text-[9px] text-orange-500 mt-2 font-bold">Há 2 horas</p>
+                    <p className="text-[10px] text-gray-500 mt-1">Um convidado aprovou um roteiro.</p>
+                    <p className="text-[9px] text-orange-500 mt-2 font-bold">Há poucos minutos</p>
                   </div>
                 </div>
                 <button className="w-full py-3 text-[10px] font-bold text-gray-400 hover:text-[#8B4513] bg-gray-50 transition-colors">

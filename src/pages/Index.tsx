@@ -15,11 +15,30 @@ const Dashboard = () => {
   ]);
   const [recentEpisodes, setRecentEpisodes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [displayName, setDisplayName] = useState<string>("");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const email = session?.user?.email;
+      const userId = session?.user?.id;
+      if (!userId) {
+        setDisplayName(email || "");
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", userId)
+        .single();
+      setDisplayName(profile?.full_name?.trim() || email || "");
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Busca contagens reais
         const { count: epCount } = await supabase.from('episodes').select('*', { count: 'exact', head: true });
         const { count: guestCount } = await supabase.from('guests').select('*', { count: 'exact', head: true });
         const { count: approvedCount } = await supabase.from('episodes').select('*', { count: 'exact', head: true }).eq('status', 'aprovado');
@@ -31,7 +50,6 @@ const Dashboard = () => {
           { label: 'Horas de Gravação', value: '24h', icon: Clock, color: 'text-purple-600' },
         ]);
 
-        // Busca episódios recentes
         const { data: episodes } = await supabase
           .from('episodes')
           .select('*, guests(name)')
@@ -63,7 +81,9 @@ const Dashboard = () => {
     <Layout>
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold text-[#2D1B14]">Bem-vinda de volta, Silvana.</h1>
+          <h1 className="text-3xl font-bold text-[#2D1B14]">
+            {displayName ? `Bem-vinda(o) de volta, ${displayName}.` : "Bem-vinda(o) de volta."}
+          </h1>
           <p className="text-gray-500 mt-2">O fogo da cozinha está aceso. Aqui está o resumo da sua produção.</p>
         </div>
 
