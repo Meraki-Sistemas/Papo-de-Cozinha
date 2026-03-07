@@ -16,9 +16,7 @@ import CalendarPage from "./pages/Calendar";
 import PostProduction from "./pages/PostProduction";
 import Episodes from "./pages/Episodes";
 import Settings from "./pages/Settings";
-import KnowledgeBase from "./pages/KnowledgeBase";
-import Analytics from "./pages/Analytics";
-import MediaLibrary from "./pages/MediaLibrary";
+// Removed: MediaLibrary, KnowledgeBase, Analytics
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -46,9 +44,9 @@ const App = () => {
             <Route path="/episodes/post/:id" element={<ProtectedRoute><PostProduction /></ProtectedRoute>} />
             <Route path="/episodes" element={<ProtectedRoute><Episodes /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/knowledge" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-            <Route path="/media" element={<ProtectedRoute><MediaLibrary /></ProtectedRoute>} />
+            <Route path="/knowledge" element={<ProtectedRoute><div /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><div /></ProtectedRoute>} />
+            <Route path="/media" element={<ProtectedRoute><div /></ProtectedRoute>} />
             
             {/* Rota Pública */}
             <Route path="/public/script/:id" element={<PublicScript />} />

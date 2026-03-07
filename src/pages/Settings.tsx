@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,54 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Sparkles, ShieldCheck, Globe, Bell, Save } from "lucide-react";
+import { Sparkles, Globe, Save } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 
+type SettingsState = {
+  aiGuidelines: string;
+  sensitivityFilter: boolean;
+  podcastName: string;
+  podcastSlogan: string;
+  approvalBaseUrl: string;
+};
+
+const DEFAULTS: SettingsState = {
+  aiGuidelines:
+    "Priorizar termos de acolhimento. Evitar perguntas invasivas sobre segredos litúrgicos. Manter tom de escuta ativa e respeito à ancestralidade.",
+  sensitivityFilter: true,
+  podcastName: "PApo de Cozinha",
+  podcastSlogan: "Tecnologia como ferramenta de cuidado.",
+  approvalBaseUrl: "https://papodecozinha.com/revisao/",
+};
+
+const STORAGE_KEY = "aiye_hub_settings";
+
 const Settings = () => {
+  const [state, setState] = useState<SettingsState>(DEFAULTS);
+
+  useEffect(() => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as SettingsState;
+        setState({ ...DEFAULTS, ...parsed });
+      } catch {
+        setState(DEFAULTS);
+      }
+    }
+  }, []);
+
+  const save = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    showSuccess("Configurações salvas com sucesso!");
+  };
+
+  const restore = () => {
+    setState(DEFAULTS);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULTS));
+    showSuccess("Configurações restauradas para os padrões.");
+  };
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
@@ -32,10 +77,11 @@ const Settings = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Linguagem e Tom</Label>
-                <Textarea 
-                  placeholder="Ex: Use linguagem não colonial, evite termos exóticos para ritos de terreiro..." 
+                <Textarea
+                  placeholder="Ex: Use linguagem não colonial, evite termos exóticos para ritos de terreiro..."
                   className="bg-gray-50 border-none min-h-[100px]"
-                  defaultValue="Priorizar termos de acolhimento. Evitar perguntas invasivas sobre segredos litúrgicos. Manter tom de escuta ativa e respeito à ancestralidade."
+                  value={state.aiGuidelines}
+                  onChange={(e) => setState((s) => ({ ...s, aiGuidelines: e.target.value }))}
                 />
               </div>
               <div className="flex items-center justify-between p-4 bg-orange-50/50 rounded-xl border border-orange-100">
@@ -43,7 +89,10 @@ const Settings = () => {
                   <Label className="text-sm font-bold text-[#8B4513]">Filtro de Sensibilidade Cultural</Label>
                   <p className="text-xs text-gray-500">Bloqueia automaticamente perguntas que possam ser desrespeitosas.</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={state.sensitivityFilter}
+                  onCheckedChange={(val) => setState((s) => ({ ...s, sensitivityFilter: Boolean(val) }))}
+                />
               </div>
             </CardContent>
           </Card>
@@ -63,23 +112,35 @@ const Settings = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nome do Podcast</Label>
-                  <Input defaultValue="PApo de Cozinha" className="bg-gray-50 border-none" />
+                  <Input
+                    value={state.podcastName}
+                    onChange={(e) => setState((s) => ({ ...s, podcastName: e.target.value }))}
+                    className="bg-gray-50 border-none"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Slogan / Descrição Curta</Label>
-                  <Input defaultValue="Tecnologia como ferramenta de cuidado." className="bg-gray-50 border-none" />
+                  <Input
+                    value={state.podcastSlogan}
+                    onChange={(e) => setState((s) => ({ ...s, podcastSlogan: e.target.value }))}
+                    className="bg-gray-50 border-none"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Link Base para Aprovação</Label>
-                <Input defaultValue="https://papodecozinha.com/revisao/" className="bg-gray-50 border-none" />
+                <Input
+                  value={state.approvalBaseUrl}
+                  onChange={(e) => setState((s) => ({ ...s, approvalBaseUrl: e.target.value }))}
+                  className="bg-gray-50 border-none"
+                />
               </div>
             </CardContent>
           </Card>
 
           <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={() => showSuccess("Configurações restauradas para os padrões.")}>Restaurar Padrões</Button>
-            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => showSuccess("Configurações salvas com sucesso!")}>
+            <Button variant="outline" onClick={restore}>Restaurar Padrões</Button>
+            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={save}>
               <Save size={18} /> Salvar Alterações
             </Button>
           </div>

@@ -8,11 +8,8 @@ import {
   FileText, 
   Settings as SettingsIcon,
   Coffee,
-  Library,
-  BarChart3,
   Bell,
   Search,
-  Music,
   LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -62,9 +59,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     { icon: Users, label: 'Convidados', path: '/guests' },
     { icon: Calendar, label: 'Agenda', path: '/calendar' },
     { icon: FileText, label: 'Roteiros', path: '/scripts' },
-    { icon: Music, label: 'Mídias', path: '/media' },
-    { icon: Library, label: 'Base de Saberes', path: '/knowledge' },
-    { icon: BarChart3, label: 'Impacto', path: '/analytics' },
     { icon: SettingsIcon, label: 'Configurações', path: '/settings' },
   ];
 
