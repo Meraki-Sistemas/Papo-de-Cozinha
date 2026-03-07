@@ -139,13 +139,14 @@ const EpisodeDetail = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => showSuccess("Notas da equipe: funcionalidade em breve.")}>
               <MessageSquare size={18} /> Notas da Equipe
             </Button>
             <Button 
               className="bg-[#8B4513] hover:bg-[#6F370F] gap-2"
               onClick={advanceStatus}
               disabled={updating}
+              type="button"
             >
               {updating ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
               Próxima Etapa
@@ -157,7 +158,7 @@ const EpisodeDetail = () => {
         <Card className="border-none shadow-sm bg-white overflow-hidden">
           <CardContent className="p-8">
             <div className="relative flex justify-between">
-              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-100 -translate-y-1/2 z-0" />
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-100 -translate-y-1/2 z-0 pointer-events-none" />
               {steps.map((step) => {
                 const status = getStepStatus(step.key);
                 return (
@@ -209,7 +210,13 @@ const EpisodeDetail = () => {
 
             {/* Ações Rápidas */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="border-none shadow-sm hover:bg-orange-50 transition-colors cursor-pointer" onClick={() => navigate("/scripts")}>
+              <Card 
+                className="border-none shadow-sm hover:bg-orange-50 transition-colors cursor-pointer" 
+                onClick={() => navigate("/scripts")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/scripts"); }}
+              >
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className="p-3 bg-white rounded-xl shadow-sm text-orange-600">
                     <FileText size={24} />
@@ -220,7 +227,13 @@ const EpisodeDetail = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-sm hover:bg-blue-50 transition-colors cursor-pointer" onClick={() => navigate("/calendar")}>
+              <Card 
+                className="border-none shadow-sm hover:bg-blue-50 transition-colors cursor-pointer" 
+                onClick={() => navigate("/calendar")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/calendar"); }}
+              >
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className="p-3 bg-white rounded-xl shadow-sm text-blue-600">
                     <Calendar size={24} />
@@ -245,7 +258,7 @@ const EpisodeDetail = () => {
                     "Este episódio foca na interseção entre tecnologia e ancestralidade. O roteiro atual está sendo processado com base nos eixos selecionados."
                   </p>
                 </div>
-                <Button variant="secondary" className="w-full bg-white/10 border-none text-white hover:bg-white/20 text-xs">
+                <Button variant="secondary" className="w-full bg-white/10 border-none text-white hover:bg-white/20 text-xs" onClick={() => showSuccess("Briefing gerado para a equipe! (demonstração)")}>
                   Gerar Briefing para Equipe
                 </Button>
               </CardContent>
