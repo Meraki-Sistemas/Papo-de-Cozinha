@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Share2, MessageSquare, Info, History, Clock } from "lucide-react";
+import { Save, Share2, MessageSquare, Info, History, Clock, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { showError, showSuccess } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,8 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
 
   const [displayName, setDisplayName] = useState<string>("");
   const [versions, setVersions] = useState<ScriptVersion[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -80,8 +82,9 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
           showError("Não foi possível carregar o roteiro do episódio.");
           return;
         }
-        if (data?.script_content) {
-          setScript(data.script_content as string);
+        // Aceita string vazia como conteúdo válido
+        if (data && "script_content" in data) {
+          setScript((data as any).script_content ?? "");
         }
       }
     };
@@ -118,21 +121,30 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
     showSuccess("Versão carregada no editor.");
   };
 
-  // Salvar no banco (se houver episodeId) ao clicar em "Salvar Versão"
   const handlePersistToSupabase = async () => {
     if (!episodeId) {
       showSuccess("Versão salva localmente (sem episódio vinculado).");
       return;
     }
-    const { error } = await supabase
+    setSaving(true);
+    const { data, error } = await supabase
       .from("episodes")
       .update({ script_content: script })
-      .eq("id", episodeId);
+      .eq("id", episodeId)
+      .select("script_content")
+      .single();
+    setSaving(false);
     if (error) {
       console.error(error);
       showError("Falha ao salvar roteiro no episódio.");
       return;
     }
+    // Reaplica do banco para garantir que o que vemos é o que foi salvo
+    if (data && "script_content" in data) {
+      setScript((data as any).script_content ?? "");
+    }
+    const ts = new Date().toLocaleString();
+    setLastSavedAt(ts);
     showSuccess("Roteiro salvo no episódio!");
   };
 
@@ -152,8 +164,13 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
             <Button variant="outline" className="gap-2" onClick={handleShare}>
               <Share2 size={18} /> Compartilhar
             </Button>
-            <Button className="bg-[#8B4513] hover:bg-[#6F370F] gap-2" onClick={() => { handleSaveVersion(); handlePersistToSupabase(); }}>
-              <Save size={18} /> Salvar Versão
+            <Button 
+              className="bg-[#8B4513] hover:bg-[#6F370F] gap-2 disabled:opacity-60" 
+              onClick={() => { handleSaveVersion(); handlePersistToSupabase(); }}
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+              {saving ? "Salvando..." : "Salvar Versão"}
             </Button>
           </div>
         </div>
@@ -170,6 +187,9 @@ Boas vindas à nossa cozinha. Hoje recebemos alguém que transita entre o saber 
                 />
               </CardContent>
             </Card>
+            {lastSavedAt && (
+              <p className="text-xs text-gray-500">Último salvamento: {lastSavedAt}</p>
+            )}
           </div>
 
           <div className="space-y-6">
